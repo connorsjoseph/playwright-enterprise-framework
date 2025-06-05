@@ -1,0 +1,32 @@
+# Node modules
+node_modules/
+
+
+# Allure results and reports
+allure-results/
+allure-report/
+
+# Playwright reports
+playwright-report/
+
+# Test results
+test-results/
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# VS Code settings
+.vscode/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Output directories (if any)
+dist/
+build/
+out/
+
+# Ignore all .webm video files
+*.webm
