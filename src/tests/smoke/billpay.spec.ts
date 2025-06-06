@@ -90,4 +90,6 @@ test.describe('Bill Pay', () => {
   
 
   // 🔧 Future enhancement: test for invalid amount, account not selected, special characters, etc.
+  // test('should handle invalid inputs gracefully', async ({ page }) => {
+  //   const billPayPage = new BillPayPage(page);
 });
