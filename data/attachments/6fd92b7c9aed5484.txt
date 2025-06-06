@@ -1,0 +1,2 @@
+Login attempt 1 for user: user_mjJFJy
+Attempting login with username: user_mjJFJy, password: Password123

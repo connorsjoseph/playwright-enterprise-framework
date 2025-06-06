@@ -1,0 +1,3 @@
+Login attempt 1 for user: user_7bzdSs
+Attempting login with username: user_7bzdSs, password: password123
+Using account ID: 15453
