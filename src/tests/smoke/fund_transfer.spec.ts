@@ -34,5 +34,5 @@ test('Fund Transfer Test', async ({ page }) => {
   // Use the same account for both from and to, as Parabank allows this
   await fundTransferPage.transferFunds('100', accountId, accountId);
   await fundTransferPage.assertTransferSuccess();
-  await fundTransferPage.logout();
+  
 });

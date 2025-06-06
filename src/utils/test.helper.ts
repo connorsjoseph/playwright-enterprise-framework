@@ -21,9 +21,13 @@ export async function registerAndLogin(page: Page, user: {
   await expect(page.locator(`text=Welcome ${user.username}`)).toBeVisible({ timeout: 5000 });
 
   await registerPage.logout();
- // await page.waitForTimeout(5000); // Give backend time to flush
+
+  // Ensure we are on the login page before attempting login
+  if (!page.url().includes('/parabank/index.htm')) {
+    await page.goto('/parabank/index.htm');
+    await page.waitForLoadState('networkidle');
+  }
 
   const loginPage = new LoginPage(page);
- // await page.waitForTimeout(5000); 
   await loginPage.retryLogin(user.username, user.password, 8, 1500);
 }

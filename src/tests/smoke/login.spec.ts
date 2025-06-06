@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import {test, expect } from '@playwright/test';
 import { loadJSON } from '../../utils/data.helper';
 import { generateRandomString } from '../../utils/string.helper';
 import { registerAndLogin } from '../../utils/test.helper';
@@ -13,4 +13,5 @@ const user = {
 
 test('Login with freshly registered user should succeed', async ({ page }) => {
   await registerAndLogin(page, user);
+  await expect(page).toHaveURL(/.*parabank\/overview/);
 });

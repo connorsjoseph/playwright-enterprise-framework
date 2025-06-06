@@ -1,25 +1,29 @@
 import { Page, expect } from '@playwright/test';
 
+export interface User {
+  firstName: string;
+  lastName: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  phone: string;
+  ssn: string;
+  username: string;
+  password: string;
+}
+
 export class RegisterPage {
   constructor(private page: Page) {}
 
   async goto() {
-    await this.page.goto('/parabank/register.htm');
-    await this.page.waitForLoadState('networkidle');
+    if (!this.page.url().includes('/parabank/register.htm')) {
+      await this.page.goto('/parabank/register.htm');
+      await this.page.waitForLoadState('networkidle');
+    }
   }
 
-  async register(user: {
-    firstName: string;
-    lastName: string;
-    address: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    phone: string;
-    ssn: string;
-    username: string;
-    password: string;
-  }) {
+  async register(user: User) {
     await this.page.fill('input[name="customer.firstName"]', user.firstName);
     await this.page.fill('input[name="customer.lastName"]', user.lastName);
     await this.page.fill('input[name="customer.address.street"]', user.address);
@@ -31,19 +35,22 @@ export class RegisterPage {
     await this.page.fill('input[name="customer.username"]', user.username);
     await this.page.fill('input[name="customer.password"]', user.password);
     await this.page.fill('input[name="repeatedPassword"]', user.password);
+
     await this.page.click('input[value="Register"]');
+// Wait for the welcome message to confirm registration success
+
   }
 
   async assertRegistrationSuccess(username: string) {
-    const welcomeMessage = await this.page.locator('h1').textContent();
-    if (!welcomeMessage || !welcomeMessage.includes(`Welcome ${username}`)) {
-      throw new Error(`Expected welcome message to include "Welcome ${username}", but got: ${welcomeMessage}`);
-    }
+    const welcomeMessageLocator = this.page.locator('h1');
+    await expect(welcomeMessageLocator).toBeVisible({ timeout: 5000 });
+    await expect(welcomeMessageLocator).toContainText(`Welcome ${username}`);
   }
 
   async assertErrorMessages(expectedMessages: string[]) {
     const errorSpansLocator = this.page.locator('span.error');
     await expect(errorSpansLocator.first()).toBeVisible({ timeout: 3000 });
+
     const errorSpans = await errorSpansLocator.allTextContents();
 
     for (const expected of expectedMessages) {
@@ -58,18 +65,7 @@ export class RegisterPage {
     await this.assertErrorMessages(expectedMessages);
   }
 
-  async registerAndAssertSuccess(user: {
-    firstName: string;
-    lastName: string;
-    address: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    phone: string;
-    ssn: string;
-    username: string;
-    password: string;
-  }) {
+  async registerAndAssertSuccess(user: User) {
     await this.goto();
     await this.register(user);
     await this.assertRegistrationSuccess(user.username);
@@ -80,6 +76,4 @@ export class RegisterPage {
     await expect(logoutLink).toBeVisible({ timeout: 3000 });
     await logoutLink.click();
   }
- 
-  
 }
