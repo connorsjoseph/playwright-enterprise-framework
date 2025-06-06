@@ -1,0 +1,3 @@
+Login attempt 1 for user: user_lybwL1
+Attempting login with username: user_lybwL1, password: password123
+Using account ID: 15342
