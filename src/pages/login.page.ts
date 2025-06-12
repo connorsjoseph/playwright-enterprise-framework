@@ -10,7 +10,11 @@ export class LoginPage {
       await this.page.waitForLoadState('networkidle');
     }
   }
-
+/**
+ * 
+ * @param username 
+ * @param password 
+ */
   async login(username: string, password: string) {
     console.log(`Attempting login with username: ${username}, password: ${password}`);
 

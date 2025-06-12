@@ -1,95 +1,98 @@
-import { test, expect } from '@playwright/test';
-import { BillPayPage } from '../../pages/billpay.page';
-import { LoginPage } from '../../pages/login.page';
+import { test, expect } from "@playwright/test";
+import { BillPayPage } from "../../pages/billpay.page";
+import { readCsvData } from "../../utils/csvReader";
+import { registerNewUser } from "../../utils/register.helper";
+import { logoutAndLogin } from "../../utils/session.helper";
+import { loadJSON } from "../../utils/data.helper";
+import { User } from "../../types/user";
 
-test.describe('Bill Pay', () => {
+// Load test data
+const users: Partial<User>[] = loadJSON("test-data/users.json");
+const positiveCases = readCsvData("test-data/Billpay/payee-positive-tests.csv");
+const negativeCases = readCsvData("test-data/Billpay/payee-negative-tests.csv");
 
-  test.beforeEach(async ({ page }, testInfo) => {
-    const loginPage = new LoginPage(page);
-    await loginPage.goto();
-    await loginPage.login('john', 'demo');
+// Keys used for bill payment
+const billFields = [
+  "payeeName",
+  "address",
+  "city",
+  "state",
+  "zipCode",
+  "phone",
+  "account",
+  "verifyAccount",
+  "amount",
+  "fromAccount",
+];
+
+test.describe("💸 Bill Pay", () => {
+  let user: User;
+
+  test.beforeEach(async ({ page }) => {
+    user = await registerNewUser(page);
+    await logoutAndLogin(page, user.username, user.password);
     await expect(page).toHaveURL(/.*parabank\/overview/);
-    console.log(`🔁 Running Retry #: ${testInfo.retry}`);
   });
 
-  test('should pay bill successfully', async ({ page }) => {
-    const billPayPage = new BillPayPage(page);
-    await billPayPage.goto();
-    await billPayPage.payBill({
-      payeeName: 'John Doe',
-      address: '123 Main St',
-      city: 'Anytown',
-      state: 'CA',
-      zipCode: '12345',
-      phone: '555-1234',
-      account: '123456',
-      verifyAccount: '123456',
-      amount: '100',
-      fromAccount: '13344', // Ensure this account exists
+  // ✅ Positive Test Cases
+  for (const data of positiveCases) {
+    test(`✅ should pay bill for ${data.payeeName}`, async ({ page }) => {
+      const billPayPage = new BillPayPage(page);
+      await billPayPage.goto();
+
+      const billData = Object.fromEntries(
+        billFields.filter((key) => data[key]).map((key) => [key, data[key]])
+      );
+
+      await billPayPage.payBill(billData);
+      await billPayPage.assertSuccess();
     });
+  }
 
-    await expect(billPayPage.successMessage).toBeVisible();
-    console.log('✅ Bill payment success message is visible.');
-    
+  // ❌ Negative Test Cases
+  test.describe("❌ Negative Bill Payment Scenarios", () => {
+    for (const data of negativeCases) {
+      const errors = (data.error || "")
+        .split(";")
+        .map((e) => e.trim())
+        .filter(Boolean);
+
+      const isAccountMismatch =
+        errors.length === 1 &&
+        errors[0] === "The account numbers do not match.";
+      const title = `❌ should show ${
+        isAccountMismatch
+          ? "account mismatch error"
+          : "validation errors for missing/invalid fields"
+      }`;
+
+      test(title, async ({ page }) => {
+        const billPayPage = new BillPayPage(page);
+        await billPayPage.goto();
+
+        const billData = Object.fromEntries(
+          billFields.filter((key) => data[key]).map((key) => [key, data[key]])
+        );
+
+        await billPayPage.payBill(billData);
+
+        if (isAccountMismatch) {
+          await billPayPage.assertAccountMismatchError();
+        } else {
+          await billPayPage.assertValidationErrorsCount(errors.length);
+          const actualErrors = (await billPayPage.getAllValidationErrors()).map(
+            (e) => e.trim()
+          );
+
+          try {
+            expect(actualErrors).toEqual(errors); // strict match
+          } catch {
+            console.error("❌ Validation errors do not match!");
+            console.table({ Expected: errors, Actual: actualErrors });
+            throw new Error("Validation error mismatch.");
+          }
+        }
+      });
+    }
   });
-
-  test('should show error for missing required fields', async ({ page }) => {
-    const billPayPage = new BillPayPage(page);
-    await billPayPage.goto();
-    await billPayPage.payBill({}); // Send empty fields
-
-    const errorLocators = page.locator('.error:visible');
-    const errorCount = await errorLocators.count();
-    console.log(`🔍 Error elements found: ${errorCount}`);
-    await expect(errorLocators).toHaveCount(9); // Expected 9 visible errors
-
-    const actualErrors = (await errorLocators.allTextContents()).map(e => e.trim());
-    const expectedErrors = [
-      'Payee name is required.',
-      'Address is required.',
-      'City is required.',
-      'State is required.',
-      'Zip Code is required.',
-      'Phone number is required.',
-      'Account number is required.',
-      'Account number is required.',
-      'The amount cannot be empty.',
-    ];
-
-    console.log('🟡 Actual Errors:', actualErrors);
-    console.log('🟢 Expected Errors:', expectedErrors);
-
-    // If order is not guaranteed, compare sorted arrays
-    expect(actualErrors.length).toBe(expectedErrors.length);
-    expectedErrors.forEach(error => {
-      expect(actualErrors).toContain(error);
-    });
-
-  });
-
-  test('should show error for account mismatch', async ({ page }) => {
-    const billPayPage = new BillPayPage(page);
-    await billPayPage.goto();
-    await billPayPage.payBill({
-      payeeName: 'John Doe',
-      address: '123 Main St',
-      city: 'Anytown',
-      state: 'CA',
-      zipCode: '12345',
-      phone: '555-1234',
-      account: '123456',
-      verifyAccount: '654321', // Mismatched account
-      amount: '100',
-      fromAccount: '13344',
-    });
-
-    await expect(billPayPage.accountMismatchError).toBeVisible();
-    await expect(billPayPage.accountMismatchError).toHaveText('The account numbers do not match.');
-    console.log('❌ Mismatched account numbers error displayed correctly.');
-  });
-  
-
-  // 🔧 Future enhancement: test for invalid amount, account not selected, special characters, etc.
-  // test('should handle invalid inputs gracefully', async ({ page }) => {
-  
 });

@@ -1,11 +1,9 @@
-import ExcelJS from 'exceljs';
-import fs from 'fs';
+import ExcelJS from "exceljs";
+import fs from "fs";
 
-export function loadJSON(filePath: string) {
-  return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+export function loadJSON<T = any>(filePath: string): T {
+  return JSON.parse(fs.readFileSync(filePath, "utf-8"));
 }
-
-
 
 export async function loadExcel(filePath: string) {
   const workbook = new ExcelJS.Workbook();

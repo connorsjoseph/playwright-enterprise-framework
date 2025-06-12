@@ -1,0 +1,33 @@
+[
+  {
+    "scenario": "Valid transfer with same account",
+    "amount": "100",
+    "fromAccount": "same",
+    "toAccount": "same",
+    "expectSuccess": true
+  },
+  {
+    "scenario": "Empty amount",
+    "amount": "",
+    "fromAccount": "same",
+    "toAccount": "same",
+    "expectSuccess": false,
+    "expectedError": "Please enter a valid amount."
+  },
+  {
+    "scenario": "Negative amount",
+    "amount": "-50",
+    "fromAccount": "same",
+    "toAccount": "same",
+    "expectSuccess": false,
+    "expectedError": "Amount must be a positive number."
+  },
+  {
+    "scenario": "Zero amount",
+    "amount": "0",
+    "fromAccount": "same",
+    "toAccount": "same",
+    "expectSuccess": false,
+    "expectedError": "Amount must be greater than zero."
+  }
+]
