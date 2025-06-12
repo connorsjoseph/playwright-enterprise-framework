@@ -1,0 +1,4 @@
+firstName,lastName,address,city,state,zipCode,phone,ssn,username,password,error
+,,,,,,,,,,"First Name is required.;Last Name is required.;Address is required.;City is required.;State is required.;Zip Code is required.;Phone is required.;SSN is required.;Username is required.;Password is required."
+John,,123 Main St,Anytown,CA,12345,555-1234,123-45-6789,,Password123,"Last Name is required.;Username is required."
+Jane,Smith,,,,,,987-65-4321,janesmith1,,"Address is required.;City is required.;State is required.;Zip Code is required.;Phone is required.;Password is required."

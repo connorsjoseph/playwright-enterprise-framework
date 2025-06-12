@@ -1,38 +1,43 @@
 import { test, expect } from '@playwright/test';
 import { FundTransferPage } from '../../pages/fund_transfer.page';
-import { registerAndLogin } from '../../utils/test.helper';
-import { generateRandomString } from '../../utils/string.helper';
+import { registerNewUser } from '../../utils/register.helper';
+import { loadJSON } from '../../utils/data.helper';
+import { logoutAndLogin } from '../../utils/session.helper';
+import { User } from '../../types/user';
 
-const user = {
-  firstName: 'Alice',
-  lastName: 'Walker',
-  address: '789 Park Ave',
-  city: 'Miami',
-  state: 'FL',
-  zipCode: '33101',
-  phone: '3055551234',
-  ssn: '999-88-7777',
-  username: `user_${generateRandomString(6)}`,
-  password: 'password123'
+type FundTransferTestData = {
+  scenario: string;
+  amount: string;
+  fromAccount: string;
+  toAccount: string;
+  expectSuccess: boolean;
+  expectedError?: string;
 };
 
-test('Fund Transfer Test', async ({ page }) => {
-  await registerAndLogin(page, user);
+const users: Partial<User>[] = loadJSON('test-data/users.json');
+const testCases: FundTransferTestData[] = loadJSON('test-data/fund-transfer.testdata.json');
 
-  // Go to Accounts Overview and get account ID
-  await page.click('a[href="overview.htm"]');
-  await page.waitForSelector('#accountTable tbody a');
-  const accountLinks = await page.locator('#accountTable tbody a').allInnerTexts();
-  const accountId = accountLinks[0];
-  console.log(`Using account ID: ${accountId}`);
-  const fundTransferPage = new FundTransferPage(page);
-  await fundTransferPage.goto();
+test.describe('Fund Transfer Scenarios', () => {
+  for (const testData of testCases) {
+    test(`${testData.scenario}`, async ({ page }) => {
+      const user = await registerNewUser(page, users[0]);
+      await logoutAndLogin(page, user.username, user.password);
 
-  // Optional: Hard wait for dropdown to populate (for debugging)
-  await page.waitForTimeout(2000);
+      const transferPage = new FundTransferPage(page);
+      const accountIds = await transferPage.getAccountIds();
+      const accountId = accountIds[0]; // use the first account
 
-  // Use the same account for both from and to, as Parabank allows this
-  await fundTransferPage.transferFunds('100', accountId, accountId);
-  await fundTransferPage.assertTransferSuccess();
-  
+      const fromAcc = testData.fromAccount === 'same' ? accountId : accountIds[0];
+      const toAcc = testData.toAccount === 'same' ? accountId : accountIds[1] || accountIds[0];
+
+      await transferPage.goto();
+      await transferPage.transferFunds(testData.amount, fromAcc, toAcc);
+
+      if (testData.expectSuccess) {
+        await transferPage.assertTransferSuccess();
+      } else {
+        await transferPage.assertTransferFailure(testData.expectedError || 'Invalid operation');
+      }
+    });
+  }
 });

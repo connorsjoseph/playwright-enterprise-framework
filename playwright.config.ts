@@ -18,11 +18,11 @@ export default defineConfig({
     baseURL: process.env.BASE_URL || 'https://parabank.parasoft.com',
     viewport: { width: 1280, height: 720 },
     actionTimeout: 10000,
-    headless: false,
+    headless: process.env.CI ? true : false,
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
-    video: 'on', // <--- Add this line to enable video recording for all tests
+    video: 'on', // Enable video recording for all tests
   },
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined
+  workers: process.env.CI ? 2 : undefined,
 });
